@@ -1,14 +1,14 @@
 import { StatusBar } from 'expo-status-bar';
-import { SafeAreaView } from 'react-native';
+import { NavigationContainer } from '@react-navigation/native';
 
-import { DashboardScreen } from './src/features/dashboard/DashboardScreen';
+import { RootNavigator } from './src/features/dashboard/RootNavigator';
 import { colors } from './src/theme/colors';
 
 export default function App() {
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: colors.canvas }}>
+    <NavigationContainer>
       <StatusBar style="dark" />
-      <DashboardScreen />
-    </SafeAreaView>
+      <RootNavigator />
+    </NavigationContainer>
   );
 }
