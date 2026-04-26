@@ -1,0 +1,27 @@
+{
+  "expo": {
+    "name": "Finance Super App",
+    "slug": "finance-super-app",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "light",
+    "splash": {
+      "resizeMode": "contain",
+      "backgroundColor": "#F7F3EA"
+    },
+    "assetBundlePatterns": [
+      "**/*"
+    ],
+    "ios": {
+      "supportsTablet": true
+    },
+    "android": {
+      "adaptiveIcon": {
+        "backgroundColor": "#F7F3EA"
+      }
+    },
+    "web": {
+      "bundler": "metro"
+    }
+  }
+}
