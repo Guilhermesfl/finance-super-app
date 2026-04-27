@@ -6,6 +6,7 @@ describe('Finance domain models', () => {
     it('creates an expense transaction', () => {
       const transaction: Transaction = {
         id: 'txn-001',
+        portfolioId: 'portfolio-001',
         kind: 'expense',
         accountId: 'acc-001',
         categoryId: 'food',
@@ -22,6 +23,7 @@ describe('Finance domain models', () => {
     it('creates an income transaction', () => {
       const transaction: Transaction = {
         id: 'txn-002',
+        portfolioId: 'portfolio-001',
         kind: 'income',
         accountId: 'acc-001',
         categoryId: 'salary',
@@ -38,6 +40,7 @@ describe('Finance domain models', () => {
     it('creates a transfer with FX metadata', () => {
       const transfer: Transaction = {
         id: 'xfer-001',
+        portfolioId: 'portfolio-001',
         kind: 'transfer',
         accountId: 'acc-eur',
         occurredAt: '2026-04-26',
@@ -60,6 +63,7 @@ describe('Finance domain models', () => {
     it('creates a monthly recurring rule', () => {
       const rule: RecurringRule = {
         id: 'rule-001',
+        portfolioId: 'portfolio-001',
         label: 'Gym membership',
         frequency: 'monthly',
         nextOccurrenceAt: '2026-05-15',
@@ -75,6 +79,7 @@ describe('Finance domain models', () => {
     it('creates a quarterly recurring rule', () => {
       const rule: RecurringRule = {
         id: 'rule-002',
+        portfolioId: 'portfolio-001',
         label: 'Quarterly property tax',
         frequency: 'quarterly',
         nextOccurrenceAt: '2026-07-01',

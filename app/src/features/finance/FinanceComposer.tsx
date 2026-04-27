@@ -10,6 +10,8 @@ const recurrenceOptions: RecurrenceFrequency[] = ['weekly', 'monthly', 'quarterl
 const colorTokenOptions = ['cardA', 'cardB', 'cardC', 'accentSoft'] as const;
 
 interface FinanceComposerProps {
+  portfolioId: string;
+  portfolioName: string;
   snapshot: DashboardSnapshot;
   onSaved: () => Promise<void>;
 }
@@ -85,6 +87,7 @@ export function FinanceComposer(props: FinanceComposerProps) {
 
     try {
       await createTransaction({
+        portfolioId: props.portfolioId,
         kind: transactionKind,
         accountId: transactionAccount.id,
         categoryId: transactionCategoryId || undefined,
@@ -123,6 +126,7 @@ export function FinanceComposer(props: FinanceComposerProps) {
 
     try {
       await createRecurringRule({
+        portfolioId: props.portfolioId,
         label: ruleLabel,
         frequency: ruleFrequency,
         nextOccurrenceAt: ruleDate,
@@ -182,6 +186,7 @@ export function FinanceComposer(props: FinanceComposerProps) {
 
     try {
       await createTransfer({
+        portfolioId: props.portfolioId,
         sourceAccountId: transferSourceId,
         destinationAccountId: transferDestId,
         amountInSourceCurrency: amountMinorUnits,
@@ -202,7 +207,7 @@ export function FinanceComposer(props: FinanceComposerProps) {
   return (
     <View style={styles.root}>
       <Text style={styles.header}>Add finance data</Text>
-      <Text style={styles.subheader}>These forms write directly to the on-device ledger and refresh the dashboard after save.</Text>
+      <Text style={styles.subheader}>These forms save operations to {props.portfolioName} and refresh the portfolio after save.</Text>
 
       {errorMessage ? <Text style={styles.errorText}>{errorMessage}</Text> : null}
       {feedback ? <Text style={styles.feedbackText}>{feedback}</Text> : null}

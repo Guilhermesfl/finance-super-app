@@ -2,7 +2,6 @@ import { useEffect, useState, type ReactNode } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { formatMoney } from '../../domain/money';
-import { FinanceComposer } from '../finance';
 import { loadDashboardSnapshot, type DashboardSnapshot } from '../../storage';
 import { colors } from '../../theme/colors';
 
@@ -82,8 +81,6 @@ export function DashboardScreen() {
           <Text style={styles.metricLabel}>{snapshot.subscriptions.length} recurring charges this month</Text>
         </SectionCard>
       </View>
-
-      <FinanceComposer snapshot={snapshot} onSaved={hydrateDashboard} />
 
       <SectionCard title="Categories in focus" tone="surface">
         <View style={styles.chipRow}>

@@ -28,6 +28,7 @@ export const accounts: Account[] = [
 export const transactions: Transaction[] = [
   {
     id: 'txn-rent',
+    portfolioId: 'portfolio-global',
     kind: 'expense',
     accountId: 'wallet-main',
     categoryId: 'housing',
@@ -38,6 +39,7 @@ export const transactions: Transaction[] = [
   },
   {
     id: 'txn-spotify',
+    portfolioId: 'portfolio-global',
     kind: 'expense',
     accountId: 'wallet-main',
     categoryId: 'subscriptions',
@@ -48,6 +50,7 @@ export const transactions: Transaction[] = [
   },
   {
     id: 'txn-invest-transfer',
+    portfolioId: 'portfolio-digital',
     kind: 'transfer',
     accountId: 'broker-01',
     categoryId: 'investing',

@@ -2,12 +2,8 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 
 import { ConsolidatedDashboard } from './ConsolidatedDashboard';
 import { PortfolioDetailScreen } from './PortfolioDetailScreen';
+import type { RootStackParamList } from './navigationTypes';
 import { colors } from '../../theme/colors';
-
-export type RootStackParamList = {
-  ConsolidatedDashboard: undefined;
-  PortfolioDetail: { portfolioId: string };
-};
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 

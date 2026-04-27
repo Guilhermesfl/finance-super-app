@@ -4,9 +4,10 @@ import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RouteProp } from '@react-navigation/native';
 
 import { formatMoney } from '../../domain/money';
+import { FinanceComposer } from '../finance';
 import { loadDashboardSnapshot, type DashboardSnapshot } from '../../storage';
 import { colors } from '../../theme/colors';
-import type { RootStackParamList } from './RootNavigator';
+import type { RootStackParamList } from './navigationTypes';
 
 type PortfolioDetailProps = {
   navigation: NativeStackNavigationProp<RootStackParamList, 'PortfolioDetail'>;
@@ -70,6 +71,9 @@ export function PortfolioDetailScreen({ navigation, route }: PortfolioDetailProp
       </View>
     );
   }
+
+  const portfolioTransactions = snapshot.transactions.filter((transaction) => transaction.portfolioId === portfolio.id);
+  const portfolioRules = snapshot.recurringRules.filter((rule) => rule.portfolioId === portfolio.id);
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
@@ -140,9 +144,43 @@ export function PortfolioDetailScreen({ navigation, route }: PortfolioDetailProp
 
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Operations</Text>
-        <Text style={styles.comingSoon}>
-          Trade execution, lot tracking, and rebalancing coming in phase 1.1
-        </Text>
+        <FinanceComposer portfolioId={portfolio.id} portfolioName={portfolio.name} snapshot={snapshot} onSaved={hydrateData} />
+      </View>
+
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>Recent transactions</Text>
+        {portfolioTransactions.length === 0 ? (
+          <Text style={styles.emptyState}>No transactions yet for this portfolio.</Text>
+        ) : (
+          portfolioTransactions.slice(0, 8).map((transaction) => (
+            <View key={transaction.id} style={styles.incomeRow}>
+              <View>
+                <Text style={styles.incomeKind}>{transaction.note ?? transaction.kind}</Text>
+                <Text style={styles.incomeMeta}>{transaction.occurredAt}</Text>
+              </View>
+              <Text style={styles.incomeAmount}>{formatMoney(transaction.originalAmount)}</Text>
+            </View>
+          ))
+        )}
+      </View>
+
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>Recurring rules</Text>
+        {portfolioRules.length === 0 ? (
+          <Text style={styles.emptyState}>No recurring rules for this portfolio yet.</Text>
+        ) : (
+          portfolioRules.map((rule) => (
+            <View key={rule.id} style={styles.incomeRow}>
+              <View>
+                <Text style={styles.incomeKind}>{rule.label}</Text>
+                <Text style={styles.incomeMeta}>
+                  {rule.frequency} · next {rule.nextOccurrenceAt}
+                </Text>
+              </View>
+              <Text style={styles.incomeAmount}>{formatMoney(rule.amount)}</Text>
+            </View>
+          ))
+        )}
       </View>
     </ScrollView>
   );
@@ -238,14 +276,6 @@ const styles = StyleSheet.create({
     lineHeight: 20,
     fontStyle: 'italic',
     paddingVertical: 16,
-  },
-  comingSoon: {
-    color: colors.mutedInk,
-    fontSize: 14,
-    lineHeight: 20,
-    backgroundColor: colors.surface,
-    borderRadius: 8,
-    padding: 12,
   },
   holdingRow: {
     flexDirection: 'row',

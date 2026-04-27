@@ -26,6 +26,7 @@ export interface Account {
 
 export interface Transaction {
   id: string;
+  portfolioId: string;
   kind: TransactionKind;
   accountId: string;
   categoryId?: string;
@@ -38,6 +39,7 @@ export interface Transaction {
 
 export interface RecurringRule {
   id: string;
+  portfolioId: string;
   label: string;
   frequency: RecurrenceFrequency;
   nextOccurrenceAt: string;

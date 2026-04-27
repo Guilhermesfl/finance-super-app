@@ -3,10 +3,9 @@ import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 
 import { formatMoney } from '../../domain/money';
-import { FinanceComposer } from '../finance';
 import { loadDashboardSnapshot, type DashboardSnapshot } from '../../storage';
 import { colors } from '../../theme/colors';
-import type { RootStackParamList } from './RootNavigator';
+import type { RootStackParamList } from './navigationTypes';
 
 function SectionCard(props: { title: string; children: ReactNode; tone?: keyof typeof colors }) {
   const backgroundColor = props.tone ? colors[props.tone] : colors.surface;
@@ -88,8 +87,6 @@ export function ConsolidatedDashboard({ navigation }: ConsolidatedDashboardProps
           <Text style={styles.metricLabel}>{snapshot.subscriptions.length} recurring charges this month</Text>
         </SectionCard>
       </View>
-
-      <FinanceComposer snapshot={snapshot} onSaved={hydrateDashboard} />
 
       <SectionCard title="Categories in focus" tone="surface">
         <View style={styles.chipRow}>

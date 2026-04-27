@@ -21,6 +21,7 @@ export const schemaStatements = [
   );`,
   `CREATE TABLE IF NOT EXISTS recurring_rules (
     id TEXT PRIMARY KEY NOT NULL,
+    portfolio_id TEXT NOT NULL,
     label TEXT NOT NULL,
     frequency TEXT NOT NULL,
     next_occurrence_at TEXT NOT NULL,
@@ -28,6 +29,7 @@ export const schemaStatements = [
     category_id TEXT,
     currency TEXT NOT NULL,
     minor_units INTEGER NOT NULL,
+    FOREIGN KEY(portfolio_id) REFERENCES portfolios(id),
     FOREIGN KEY(account_id) REFERENCES accounts(id),
     FOREIGN KEY(category_id) REFERENCES categories(id)
   );`,
@@ -47,6 +49,7 @@ export const schemaStatements = [
   );`,
   `CREATE TABLE IF NOT EXISTS transactions (
     id TEXT PRIMARY KEY NOT NULL,
+    portfolio_id TEXT NOT NULL,
     kind TEXT NOT NULL,
     account_id TEXT NOT NULL,
     category_id TEXT,
@@ -60,6 +63,7 @@ export const schemaStatements = [
     fx_quote_currency TEXT,
     fx_rate REAL,
     fx_as_of TEXT,
+    FOREIGN KEY(portfolio_id) REFERENCES portfolios(id),
     FOREIGN KEY(account_id) REFERENCES accounts(id),
     FOREIGN KEY(category_id) REFERENCES categories(id)
   );`,

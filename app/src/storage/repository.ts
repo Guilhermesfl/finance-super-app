@@ -40,6 +40,7 @@ interface AccountRow {
 
 interface RecurringRuleRow {
   id: string;
+  portfolio_id: string;
   label: string;
   frequency: RecurrenceFrequency;
   next_occurrence_at: string;
@@ -64,6 +65,7 @@ interface SubscriptionRow {
 
 interface TransactionRow {
   id: string;
+  portfolio_id: string;
   kind: TransactionKind;
   account_id: string;
   category_id: string | null;
@@ -143,6 +145,7 @@ export interface CreateCategoryInput {
 }
 
 export interface CreateTransactionInput {
+  portfolioId: string;
   kind: Extract<TransactionKind, 'expense' | 'income'>;
   accountId: string;
   categoryId?: string;
@@ -153,6 +156,7 @@ export interface CreateTransactionInput {
 }
 
 export interface CreateRecurringRuleInput {
+  portfolioId: string;
   label: string;
   frequency: RecurrenceFrequency;
   nextOccurrenceAt: string;
@@ -162,6 +166,7 @@ export interface CreateRecurringRuleInput {
 }
 
 export interface CreateTransferInput {
+  portfolioId: string;
   sourceAccountId: string;
   destinationAccountId: string;
   amountInSourceCurrency: number;
@@ -261,6 +266,7 @@ export async function createCategory(input: CreateCategoryInput): Promise<Catego
 
 export async function createTransaction(input: CreateTransactionInput): Promise<Transaction> {
   const database = await getDatabase();
+  await assertPortfolioExists(database, input.portfolioId);
   const accountRow = await database.getFirstAsync<AccountRow>('SELECT * FROM accounts WHERE id = ?;', input.accountId);
 
   if (!accountRow) {
@@ -277,10 +283,11 @@ export async function createTransaction(input: CreateTransactionInput): Promise<
   try {
     await database.runAsync(
       `INSERT INTO transactions (
-        id, kind, account_id, category_id, note, occurred_at, original_currency, original_minor_units,
+        id, portfolio_id, kind, account_id, category_id, note, occurred_at, original_currency, original_minor_units,
         base_currency, base_minor_units, fx_base_currency, fx_quote_currency, fx_rate, fx_as_of
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);`,
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);`,
       id,
+      input.portfolioId,
       input.kind,
       input.accountId,
       input.categoryId ?? null,
@@ -316,6 +323,7 @@ export async function createTransaction(input: CreateTransactionInput): Promise<
 
   return {
     id,
+    portfolioId: input.portfolioId,
     kind: input.kind,
     accountId: input.accountId,
     categoryId: input.categoryId,
@@ -337,6 +345,7 @@ export async function createTransaction(input: CreateTransactionInput): Promise<
 
 export async function createRecurringRule(input: CreateRecurringRuleInput): Promise<RecurringRule> {
   const database = await getDatabase();
+  await assertPortfolioExists(database, input.portfolioId);
   const accountRow = await database.getFirstAsync<AccountRow>('SELECT * FROM accounts WHERE id = ?;', input.accountId);
 
   if (!accountRow) {
@@ -352,9 +361,10 @@ export async function createRecurringRule(input: CreateRecurringRuleInput): Prom
   const id = createEntityId('rule');
   await database.runAsync(
     `INSERT INTO recurring_rules (
-      id, label, frequency, next_occurrence_at, account_id, category_id, currency, minor_units
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?);`,
+      id, portfolio_id, label, frequency, next_occurrence_at, account_id, category_id, currency, minor_units
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?);`,
     id,
+    input.portfolioId,
     label,
     input.frequency,
     input.nextOccurrenceAt,
@@ -366,6 +376,7 @@ export async function createRecurringRule(input: CreateRecurringRuleInput): Prom
 
   return {
     id,
+    portfolioId: input.portfolioId,
     label,
     frequency: input.frequency,
     nextOccurrenceAt: input.nextOccurrenceAt,
@@ -377,6 +388,7 @@ export async function createRecurringRule(input: CreateRecurringRuleInput): Prom
 
 export async function createTransfer(input: CreateTransferInput): Promise<{ sourceId: string; destinationId: string }> {
   const database = await getDatabase();
+  await assertPortfolioExists(database, input.portfolioId);
   const sourceRow = await database.getFirstAsync<AccountRow>('SELECT * FROM accounts WHERE id = ?;', input.sourceAccountId);
   const destRow = await database.getFirstAsync<AccountRow>('SELECT * FROM accounts WHERE id = ?;', input.destinationAccountId);
 
@@ -409,10 +421,11 @@ export async function createTransfer(input: CreateTransferInput): Promise<{ sour
   try {
     await database.runAsync(
       `INSERT INTO transactions (
-        id, kind, account_id, category_id, note, occurred_at, original_currency, original_minor_units,
+        id, portfolio_id, kind, account_id, category_id, note, occurred_at, original_currency, original_minor_units,
         base_currency, base_minor_units, fx_base_currency, fx_quote_currency, fx_rate, fx_as_of
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);`,
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);`,
       sourceId,
+      input.portfolioId,
       'transfer',
       input.sourceAccountId,
       null,
@@ -430,10 +443,11 @@ export async function createTransfer(input: CreateTransferInput): Promise<{ sour
 
     await database.runAsync(
       `INSERT INTO transactions (
-        id, kind, account_id, category_id, note, occurred_at, original_currency, original_minor_units,
+        id, portfolio_id, kind, account_id, category_id, note, occurred_at, original_currency, original_minor_units,
         base_currency, base_minor_units, fx_base_currency, fx_quote_currency, fx_rate, fx_as_of
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);`,
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);`,
       destId,
+      input.portfolioId,
       'transfer',
       input.destinationAccountId,
       null,
@@ -500,6 +514,7 @@ function mapAccountRow(row: AccountRow): Account {
 function mapRecurringRuleRow(row: RecurringRuleRow): RecurringRule {
   return {
     id: row.id,
+    portfolioId: row.portfolio_id,
     label: row.label,
     frequency: row.frequency,
     nextOccurrenceAt: row.next_occurrence_at,
@@ -524,6 +539,7 @@ function mapSubscriptionRow(row: SubscriptionRow): Subscription {
 function mapTransactionRow(row: TransactionRow): Transaction {
   return {
     id: row.id,
+    portfolioId: row.portfolio_id,
     kind: row.kind,
     accountId: row.account_id,
     categoryId: row.category_id ?? undefined,
@@ -608,4 +624,12 @@ function groupBy<TItem, TKey>(items: TItem[], getKey: (item: TItem) => TKey): Ma
 
 function createEntityId(prefix: string): string {
   return `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+}
+
+async function assertPortfolioExists(database: Awaited<ReturnType<typeof getDatabase>>, portfolioId: string): Promise<void> {
+  const row = await database.getFirstAsync<{ id: string }>('SELECT id FROM portfolios WHERE id = ?;', portfolioId);
+
+  if (!row?.id) {
+    throw new Error('Selected portfolio was not found.');
+  }
 }

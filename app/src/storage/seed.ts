@@ -25,6 +25,7 @@ const assets: Asset[] = [
 const recurringRules: RecurringRule[] = [
   {
     id: 'rule-rent',
+    portfolioId: 'portfolio-global',
     label: 'Monthly rent',
     frequency: 'monthly',
     nextOccurrenceAt: '2026-05-01',
@@ -34,6 +35,7 @@ const recurringRules: RecurringRule[] = [
   },
   {
     id: 'rule-investing',
+    portfolioId: 'portfolio-digital',
     label: 'Investing allocation',
     frequency: 'monthly',
     nextOccurrenceAt: '2026-05-08',
@@ -84,9 +86,10 @@ export async function seedDatabase(database: AppDatabase): Promise<void> {
     for (const rule of recurringRules) {
       await database.runAsync(
         `INSERT OR REPLACE INTO recurring_rules (
-          id, label, frequency, next_occurrence_at, account_id, category_id, currency, minor_units
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?);`,
+          id, portfolio_id, label, frequency, next_occurrence_at, account_id, category_id, currency, minor_units
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?);`,
         rule.id,
+        rule.portfolioId,
         rule.label,
         rule.frequency,
         rule.nextOccurrenceAt,
@@ -118,10 +121,11 @@ export async function seedDatabase(database: AppDatabase): Promise<void> {
     for (const transaction of transactions) {
       await database.runAsync(
         `INSERT OR REPLACE INTO transactions (
-          id, kind, account_id, category_id, note, occurred_at, original_currency, original_minor_units,
+          id, portfolio_id, kind, account_id, category_id, note, occurred_at, original_currency, original_minor_units,
           base_currency, base_minor_units, fx_base_currency, fx_quote_currency, fx_rate, fx_as_of
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);`,
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);`,
         transaction.id,
+        transaction.portfolioId,
         transaction.kind,
         transaction.accountId,
         transaction.categoryId ?? null,
