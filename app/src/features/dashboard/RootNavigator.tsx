@@ -2,6 +2,7 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 
 import { ConsolidatedDashboard } from './ConsolidatedDashboard';
 import { PortfolioDetailScreen } from './PortfolioDetailScreen';
+import { PortfolioOperationsScreen } from './PortfolioOperationsScreen';
 import type { RootStackParamList } from './navigationTypes';
 import { colors } from '../../theme/colors';
 
@@ -37,6 +38,13 @@ export function RootNavigator() {
         options={({ route }) => ({
           title: route.params?.portfolioId || 'Portfolio',
         })}
+      />
+      <Stack.Screen
+        name="PortfolioOperations"
+        component={PortfolioOperationsScreen}
+        options={{
+          title: 'Portfolio Operations',
+        }}
       />
     </Stack.Navigator>
   );

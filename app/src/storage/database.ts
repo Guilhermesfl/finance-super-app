@@ -33,29 +33,101 @@ async function initializeDatabase(): Promise<SQLite.SQLiteDatabase> {
 
   if (!settingsRow) {
     await seedDatabase(database);
+  } else if (settingsRow.value === '1') {
+    await migrateV1toV2(database);
   }
 
   return database;
 }
 
-async function ensurePortfolioOwnershipColumns(database: SQLite.SQLiteDatabase): Promise<void> {
-  const fallbackPortfolioId = await resolveFallbackPortfolioId(database);
+async function migrateV1toV2(database: SQLite.SQLiteDatabase): Promise<void> {
+  const investmentsPortfolioId = 'portfolio-investments';
+  const fixedCostsPortfolioId = 'portfolio-fixed-costs';
 
+  await database.execAsync('BEGIN TRANSACTION;');
+
+  try {
+    await database.runAsync(
+      'INSERT OR REPLACE INTO portfolios (id, name, kind, base_currency, available_cash_minor_units) VALUES (?, ?, ?, ?, ?);',
+      investmentsPortfolioId,
+      'Investments',
+      'core',
+      'EUR',
+      0
+    );
+
+    await database.runAsync(
+      'INSERT OR REPLACE INTO portfolios (id, name, kind, base_currency, available_cash_minor_units) VALUES (?, ?, ?, ?, ?);',
+      fixedCostsPortfolioId,
+      'Fixed Costs',
+      'cash-reserve',
+      'EUR',
+      0
+    );
+
+    await database.runAsync(
+      'UPDATE transactions SET portfolio_id = ? WHERE portfolio_id IS NULL OR portfolio_id NOT IN (?, ?);',
+      investmentsPortfolioId,
+      investmentsPortfolioId,
+      fixedCostsPortfolioId
+    );
+
+    await database.runAsync(
+      'UPDATE recurring_rules SET portfolio_id = ? WHERE portfolio_id IS NULL OR portfolio_id NOT IN (?, ?);',
+      fixedCostsPortfolioId,
+      investmentsPortfolioId,
+      fixedCostsPortfolioId
+    );
+
+    await database.runAsync(
+      'UPDATE holdings SET portfolio_id = ? WHERE portfolio_id IS NULL OR portfolio_id NOT IN (?, ?);',
+      investmentsPortfolioId,
+      investmentsPortfolioId,
+      fixedCostsPortfolioId
+    );
+
+    await database.runAsync(
+      'UPDATE passive_income_streams SET portfolio_id = ? WHERE portfolio_id IS NULL OR portfolio_id NOT IN (?, ?);',
+      investmentsPortfolioId,
+      investmentsPortfolioId,
+      fixedCostsPortfolioId
+    );
+
+    await database.runAsync(
+      'DELETE FROM portfolios WHERE id NOT IN (?, ?);',
+      investmentsPortfolioId,
+      fixedCostsPortfolioId
+    );
+
+    await database.runAsync(
+      'INSERT OR REPLACE INTO app_settings (key, value) VALUES (?, ?);',
+      'seed_version',
+      '2'
+    );
+
+    await database.execAsync('COMMIT;');
+  } catch (error) {
+    await database.execAsync('ROLLBACK;');
+    throw error;
+  }
+}
+
+async function ensurePortfolioOwnershipColumns(database: SQLite.SQLiteDatabase): Promise<void> {
   await ensureColumn(database, 'transactions', 'portfolio_id', 'TEXT');
   await ensureColumn(database, 'recurring_rules', 'portfolio_id', 'TEXT');
 
-  await database.runAsync('UPDATE transactions SET portfolio_id = ? WHERE portfolio_id IS NULL;', fallbackPortfolioId);
-  await database.runAsync('UPDATE recurring_rules SET portfolio_id = ? WHERE portfolio_id IS NULL;', fallbackPortfolioId);
+  const fallbackPortfolioId = await resolveFallbackPortfolioId(database);
+
+  if (fallbackPortfolioId) {
+    await database.runAsync('UPDATE transactions SET portfolio_id = ? WHERE portfolio_id IS NULL;', fallbackPortfolioId);
+    await database.runAsync('UPDATE recurring_rules SET portfolio_id = ? WHERE portfolio_id IS NULL;', fallbackPortfolioId);
+  }
 }
 
-async function resolveFallbackPortfolioId(database: SQLite.SQLiteDatabase): Promise<string> {
+async function resolveFallbackPortfolioId(database: SQLite.SQLiteDatabase): Promise<string | null> {
   const row = await database.getFirstAsync<{ id: string }>('SELECT id FROM portfolios ORDER BY name ASC LIMIT 1;');
 
-  if (!row?.id) {
-    throw new Error('No portfolios are available to assign finance operations.');
-  }
-
-  return row.id;
+  return row?.id ?? null;
 }
 
 async function ensureColumn(

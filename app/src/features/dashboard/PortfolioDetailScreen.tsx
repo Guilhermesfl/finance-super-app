@@ -1,10 +1,9 @@
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RouteProp } from '@react-navigation/native';
 
 import { formatMoney } from '../../domain/money';
-import { FinanceComposer } from '../finance';
 import { loadDashboardSnapshot, type DashboardSnapshot } from '../../storage';
 import { colors } from '../../theme/colors';
 import type { RootStackParamList } from './navigationTypes';
@@ -19,6 +18,7 @@ export function PortfolioDetailScreen({ navigation, route }: PortfolioDetailProp
   const [snapshot, setSnapshot] = useState<DashboardSnapshot | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [isOperationsMenuOpen, setIsOperationsMenuOpen] = useState(false);
 
   useEffect(() => {
     void hydrateData();
@@ -72,15 +72,22 @@ export function PortfolioDetailScreen({ navigation, route }: PortfolioDetailProp
     );
   }
 
-  const portfolioTransactions = snapshot.transactions.filter((transaction) => transaction.portfolioId === portfolio.id);
-  const portfolioRules = snapshot.recurringRules.filter((rule) => rule.portfolioId === portfolio.id);
-
   return (
-    <ScrollView contentContainerStyle={styles.container}>
-      <View style={styles.header}>
-        <Text style={styles.title}>{portfolio.name}</Text>
-        <Text style={styles.kind}>{portfolio.kind} portfolio</Text>
-      </View>
+    <>
+      <ScrollView contentContainerStyle={styles.container}>
+        <View style={styles.headerRow}>
+          <View style={styles.header}>
+            <Text style={styles.title}>{portfolio.name}</Text>
+            <Text style={styles.kind}>{portfolio.kind} portfolio</Text>
+          </View>
+          <Pressable
+            onPress={() => setIsOperationsMenuOpen(true)}
+            style={({ pressed }) => [styles.burgerButton, pressed && styles.menuTriggerPressed]}
+          >
+            <Text style={styles.burgerIcon}>≡</Text>
+            <Text style={styles.burgerLabel}>Menu</Text>
+          </Pressable>
+        </View>
 
       <View style={styles.metricsGrid}>
         <View style={[styles.metricCard, { backgroundColor: colors.cardA }]}>
@@ -142,47 +149,48 @@ export function PortfolioDetailScreen({ navigation, route }: PortfolioDetailProp
         )}
       </View>
 
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Operations</Text>
-        <FinanceComposer portfolioId={portfolio.id} portfolioName={portfolio.name} snapshot={snapshot} onSaved={hydrateData} />
-      </View>
+      </ScrollView>
 
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Recent transactions</Text>
-        {portfolioTransactions.length === 0 ? (
-          <Text style={styles.emptyState}>No transactions yet for this portfolio.</Text>
-        ) : (
-          portfolioTransactions.slice(0, 8).map((transaction) => (
-            <View key={transaction.id} style={styles.incomeRow}>
-              <View>
-                <Text style={styles.incomeKind}>{transaction.note ?? transaction.kind}</Text>
-                <Text style={styles.incomeMeta}>{transaction.occurredAt}</Text>
-              </View>
-              <Text style={styles.incomeAmount}>{formatMoney(transaction.originalAmount)}</Text>
-            </View>
-          ))
-        )}
-      </View>
+      <Modal
+        animationType="fade"
+        transparent
+        visible={isOperationsMenuOpen}
+        onRequestClose={() => setIsOperationsMenuOpen(false)}
+      >
+        <Pressable style={styles.overlayBackdrop} onPress={() => setIsOperationsMenuOpen(false)}>
+          <Pressable style={styles.overlayCard} onPress={() => null}>
+            <Text style={styles.overlayTitle}>Portfolio actions</Text>
+            <Text style={styles.overlaySubTitle}>Choose what you want to do next.</Text>
 
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Recurring rules</Text>
-        {portfolioRules.length === 0 ? (
-          <Text style={styles.emptyState}>No recurring rules for this portfolio yet.</Text>
-        ) : (
-          portfolioRules.map((rule) => (
-            <View key={rule.id} style={styles.incomeRow}>
-              <View>
-                <Text style={styles.incomeKind}>{rule.label}</Text>
-                <Text style={styles.incomeMeta}>
-                  {rule.frequency} · next {rule.nextOccurrenceAt}
-                </Text>
-              </View>
-              <Text style={styles.incomeAmount}>{formatMoney(rule.amount)}</Text>
-            </View>
-          ))
-        )}
-      </View>
-    </ScrollView>
+            <Pressable
+              onPress={() => {
+                setIsOperationsMenuOpen(false);
+                navigation.navigate('PortfolioOperations', { portfolioId: portfolio.id, mode: 'create' });
+              }}
+              style={({ pressed }) => [styles.menuOption, pressed && styles.menuOptionPressed]}
+            >
+              <Text style={styles.menuOptionTitle}>Create</Text>
+              <Text style={styles.menuOptionBody}>Add transactions, recurring rules, categories, and transfers.</Text>
+            </Pressable>
+
+            <Pressable
+              onPress={() => {
+                setIsOperationsMenuOpen(false);
+                navigation.navigate('PortfolioOperations', { portfolioId: portfolio.id, mode: 'activity' });
+              }}
+              style={({ pressed }) => [styles.menuOption, pressed && styles.menuOptionPressed]}
+            >
+              <Text style={styles.menuOptionTitle}>Activity</Text>
+              <Text style={styles.menuOptionBody}>Review recent transactions and recurring rules in one place.</Text>
+            </Pressable>
+
+            <Pressable onPress={() => setIsOperationsMenuOpen(false)} style={styles.closeOverlayButton}>
+              <Text style={styles.closeOverlayLabel}>Close</Text>
+            </Pressable>
+          </Pressable>
+        </Pressable>
+      </Modal>
+    </>
   );
 }
 
@@ -227,6 +235,13 @@ const styles = StyleSheet.create({
   header: {
     gap: 8,
     paddingVertical: 8,
+    flex: 1,
+  },
+  headerRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    justifyContent: 'space-between',
+    gap: 12,
   },
   title: {
     color: colors.ink,
@@ -334,6 +349,91 @@ const styles = StyleSheet.create({
   incomeAmount: {
     color: colors.accent,
     fontSize: 15,
+    fontWeight: '700',
+  },
+  burgerButton: {
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.line,
+    borderRadius: 10,
+    width: 64,
+    height: 64,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 2,
+  },
+  menuTriggerPressed: {
+    opacity: 0.7,
+  },
+  burgerIcon: {
+    color: colors.ink,
+    fontSize: 24,
+    fontWeight: '700',
+  },
+  burgerLabel: {
+    color: colors.mutedInk,
+    fontSize: 11,
+    fontWeight: '600',
+    textTransform: 'uppercase',
+  },
+  overlayBackdrop: {
+    flex: 1,
+    backgroundColor: 'rgba(10, 14, 26, 0.35)',
+    justifyContent: 'center',
+    paddingHorizontal: 20,
+  },
+  overlayCard: {
+    backgroundColor: colors.canvas,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: colors.line,
+    padding: 16,
+    gap: 10,
+  },
+  overlayTitle: {
+    color: colors.ink,
+    fontSize: 20,
+    fontWeight: '700',
+  },
+  overlaySubTitle: {
+    color: colors.mutedInk,
+    fontSize: 14,
+    marginBottom: 4,
+  },
+  menuPanel: {
+    gap: 10,
+  },
+  menuOption: {
+    borderRadius: 12,
+    backgroundColor: colors.cardC,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    gap: 4,
+  },
+  menuOptionPressed: {
+    opacity: 0.72,
+  },
+  menuOptionTitle: {
+    color: colors.ink,
+    fontSize: 15,
+    fontWeight: '700',
+  },
+  menuOptionBody: {
+    color: colors.mutedInk,
+    fontSize: 13,
+    lineHeight: 18,
+  },
+  closeOverlayButton: {
+    marginTop: 6,
+    alignSelf: 'flex-end',
+    borderRadius: 999,
+    backgroundColor: colors.accentSoft,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+  },
+  closeOverlayLabel: {
+    color: colors.ink,
+    fontSize: 13,
     fontWeight: '700',
   },
 });
